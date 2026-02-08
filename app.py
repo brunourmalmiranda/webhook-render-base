@@ -1,28 +1,51 @@
 import os
+import uuid
+from datetime import datetime, timezone
 from flask import Flask, request, jsonify
 
 from dotenv import load_dotenv
-load_dotenv()  # lê o ficheiro .env na raiz do projecto
+load_dotenv()
 
 app = Flask(__name__)
 
 APP_NAME = os.getenv("APP_NAME", "webhook-render-base")
 WEBHOOK_TOKEN = os.getenv("WEBHOOK_TOKEN", "")
 
+def now_iso():
+    return datetime.now(timezone.utc).isoformat()
+
 @app.get("/health")
 def health():
-    # nunca devolvas o token; só confirmo se existe ou não
-    return jsonify(ok="Tudo funcional", service=APP_NAME, token_configured=bool(WEBHOOK_TOKEN))
+    return jsonify(
+        ok=True,
+        service=APP_NAME,
+        token_configured=bool(WEBHOOK_TOKEN),
+        ts=now_iso()
+    )
 
 @app.post("/webhook")
 def webhook():
-    # valida token (header)
+    request_id = request.headers.get("X-Request-Id") or str(uuid.uuid4())
+
+    # auth
     token = request.headers.get("X-Webhook-Token", "")
     if WEBHOOK_TOKEN and token != WEBHOOK_TOKEN:
-        return jsonify(ok=False, error="unauthorized"), 401
+        app.logger.warning("unauthorized request_id=%s ip=%s", request_id, request.remote_addr)
+        return jsonify(ok=False, error="unauthorized", request_id=request_id), 401
 
-    data = request.get_json(silent=True) or {}
-    return jsonify(ok=True, received=data)
+    # json parsing
+    data = request.get_json(silent=True)
+    if data is None:
+        return jsonify(ok=False, error="invalid_json", request_id=request_id), 400
+
+    # exemplo de validação mínima (ajusta depois ao teu schema real)
+    event = data.get("event")
+    if not event:
+        return jsonify(ok=False, error="missing_event", request_id=request_id), 422
+
+    app.logger.info("webhook received request_id=%s event=%s", request_id, event)
+
+    return jsonify(ok=True, request_id=request_id, received=data)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5000"))
