@@ -12,7 +12,7 @@ WEBHOOK_TOKEN = os.getenv("WEBHOOK_TOKEN", "")
 @app.get("/health")
 def health():
     # nunca devolvas o token; só confirmo se existe ou não
-    return jsonify(ok=True, service=APP_NAME, token_configured=bool(WEBHOOK_TOKEN))
+    return jsonify(ok="Tudo funcional", service=APP_NAME, token_configured=bool(WEBHOOK_TOKEN))
 
 @app.post("/webhook")
 def webhook():
