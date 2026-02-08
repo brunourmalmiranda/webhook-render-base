@@ -1,0 +1,17 @@
+# (opção 1) Iniciar o servidor Flask (no terminal do VS Code, com a .venv activa)
+python app.py
+
+# Pausar / parar o servidor (no mesmo terminal)
+Ctrl + C
+
+# (opção 2) Iniciar o servidor especificando o Python da venv (não depende do PATH)
+.\.venv\Scripts\python.exe app.py
+
+# Pausar / parar
+Ctrl + C
+
+# (opção 3) Activar a venv (antes de iniciar)
+.\.venv\Scripts\Activate.ps1
+
+# Desactivar a venv (quando terminares)
+deactivate
